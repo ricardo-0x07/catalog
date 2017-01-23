@@ -1,0 +1,45 @@
+ <nav class="navbar navbar-default">
+   <div class="container-fluid">
+     <!-- Brand and toggle get grouped for better mobile display -->
+     <div class="navbar-header">
+       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+         <span class="sr-only">Toggle navigation</span>
+         <span class="icon-bar"></span>
+         <span class="icon-bar"></span>
+         <span class="icon-bar"></span>
+       </button>
+       <a href="{{url_for('showRestaurants')}}">
+       	<span class="glyphicon glyphicon-home" aria-hidden="true"></span>Show All Restaurants
+       </a>
+     </div>
+
+     <!-- Collect the nav links, forms, and other content for toggling -->
+     <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+<ul class="nav navbar-nav navbar-right" id="toolBar">
+  <li class="divider-vertical"></li>
+  {% if 'username' not in session %}
+	  <li  class="login">
+	      <form class="navbar-form">
+	          <a class="btn login" href="{{url_for('showLogin')}}">
+	            <span id="signIn" class="glyphicon glyphicon-log-in"> Sign-In</span>
+	          </a>
+	      </form>
+	  </li>
+  {% else %}
+	  <li >
+	      <a href="#">
+	        <span id="loggedInUser" class="label label-info capitalize">{{username}}</span>
+	      </a>
+	  </li>
+	  <li class="logout">
+	      <form class="navbar-form">
+	          <a class="btn logout" href="{{url_for('disconnect')}}">
+	            <span id="signOut" class="glyphicon glyphicon-log-out"> Sign-Out</span>
+	          </a>
+	      </form>
+	  </li>
+  {% endif %}
+</ul>
+     </div><!-- /.navbar-collapse -->
+   </div><!-- /.container-fluid -->
+ </nav>

@@ -1,0 +1,150 @@
+{%  extends "main.html" %}
+{% block content %}
+<!-- <div class="form">      
+      <h1 class="tab active"><a href="#signup">Sign In</a></h1>      
+      <div class="tab-content">
+        <div id="signup">   
+          <form action="/login" method="post" class="form-horizontal">          
+          <div class="top-row">
+            <div class="field-wrap form-group">
+              <label for="username" class="col-sm-2 control-label">
+                Full Name<span class="req">*</span>
+              </label>
+              <div class="col-sm-10">
+                <input autofocus pattern="^[a-zA-Z0-9_-]{3,20}$" required class="form-control" name="username" id="username" type="text" autocomplete="off"  placeholder="Kindly enter your full name" />
+                <div style="color: red;">{{username_error}}</div>
+              </div>
+            </div>
+          </div>
+          <div class="field-wrap form-group">
+            <label for="password" class="col-sm-2 control-label">
+              Password<span >*</span>
+            </label>
+            <div class="col-sm-10">
+              <input required pattern="^.{3,20}$" class="form-control" type="password" name="password" id="password" autocomplete="off" placeholder="Kindly enter your password" />
+              <div style="color: red;">{{password_error}}</div>
+            </div>
+          </div>
+          <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-10">
+                <button type="submit" class="btn btn-info">Submit</button>
+                <a style="padding: 1rem" href="/signup">Sign-Up</a>
+              </div>
+          </div>
+          
+          </form>
+
+        </div>      
+      </div>   
+</div>  -->
+<div id="signinButton">
+  <span class="g-signin"
+    data-scope="openid email"
+    data-clientid="968999595803-6sqsrlr4kl5g92ibmf8dg8ne26gv8pd7.apps.googleusercontent.com"
+    data-redirecturi="postmessage"
+    data-accesstype="offline"
+    data-cookiepolicy="single_host_origin"
+    data-callback="signInCallback"
+    data-approvalprompt="force">
+    
+  </span>
+</div>
+<div id="result"></div>
+<script>
+  function signInCallback(authResult) {
+    if (authResult['code']) {
+      // Hide the sign-in button now that the user is authorized,
+      $('#signinButton').attr('style', 'display: none');
+      // send the one-time-use code to the server if the server responds, write a 'Login Successful' to the web page and then redirect back to the main catalogs page.
+      $.ajax({
+        type: 'POST',
+        url: '/gconnect?state={{STATE}}',
+        processData: false,
+        contentType: 'application/octet-stream; charset=utf-8',
+        data: authResult['code'],
+        success: function(result) {
+          if (result) {
+            $('#result').html('Login Successful!<br>' + result + '</br> Redirecting...')
+            setTimeout(function() {
+              window.location.href = "/catalog";
+            }, 4000)
+          }
+          else if (authResult['error']) {
+            console.log('There was an error: ' + authResult['error']);
+          }
+        }
+      })
+    } else {
+      $('#result').html('Failed to make a server side call. Check your configuration and console.')
+    }
+
+  }
+</script>
+<script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '636360443218110',
+      cookie     : true,  // enable cookies to allow the server to access 
+                          // the session
+      xfbml      : true,
+      version    : 'v2.8'
+    });
+    FB.AppEvents.logPageView();
+  };
+
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "//connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+  // Here we run a very simple test of the Graph API after login is
+  // successful.  See statusChangeCallback() for when this call is made.
+  function sendTokenToServer() {
+    // var access_token = FB.getAuthResponse()['accessToken'];
+    // console.log(access_token)
+    FB.login(function(response) {
+      if (response.status === 'connected') {
+        // Logged into your app and Facebook.
+        access_token = response.authResponse.accessToken
+        console.log('access_token', access_token)
+        console.log('Welcome!  Fetching your information.... ');
+        FB.api('/me', function(response) {
+          console.log('Successful login for: ' + response.name);
+            $.ajax({
+          type: 'POST',
+          url: '/fbconnect?state={{STATE}}',
+          processData: false,
+          data: access_token,
+          contentType: 'application/octet-stream; charset=utf-8',
+          success: function(result) {
+            // Handle or verify the server response if necessary.
+            if (result) {
+              $('#result').html('Login Successful!</br>'+ result + '</br>Redirecting...')
+             setTimeout(function() {
+              window.location.href = "/catalog";
+             }, 4000);
+              
+            } else {
+            $('#result').html('Failed to make a server-side call. Check your configuration and console.');
+            }
+          }
+          });
+        });
+      } else if (response.status === 'not_authorized') {
+        // The person is logged into Facebook, but not your app.
+        console.log('The person is logged into Facebook, but not your app');
+      } else {
+        // The person is not logged into Facebook, so we're not sure if
+        // they are logged into this app or not.
+        console.log("The person is not logged into Facebook, so we're not sure if they are logged into this app or not.");
+      }
+    });
+  }
+</script>
+<fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
+  <a href='javascript:sendTokenToServer()'>Login with Facebook</a>
+</fb:login-button>
+
+{% endblock %}
