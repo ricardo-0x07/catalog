@@ -335,12 +335,13 @@ def catalogsJSON():
 @app.route('/catalog/')
 def showCatalogs():
   catalogs = session.query(Catalog).order_by(asc(Catalog.name)).all()
+  items = session.query(Item).order_by(asc(Item.created)).limit(10).all()
   print 'catalogs'
   print catalogs
   if 'username' not in login_session:
-    return render_template('publiccatalog.html', catalogs = catalogs)
+    return render_template('publiccatalog.html', catalogs = catalogs, items = items)
   else: 
-    return render_template('catalog.html', catalogs = catalogs)
+    return render_template('catalog.html', catalogs = catalogs, items = items)
 
 #Create a new catalog
 @app.route('/catalog/new/', methods=['GET','POST'])
@@ -398,15 +399,18 @@ def showItems(catalog_id):
     print catalog_id
     catalog = session.query(Catalog).filter_by(id=catalog_id).one()
     items = session.query(Item).filter_by(catalog_id=catalog_id).all()
+    catalogs = session.query(Catalog).order_by(asc(Catalog.name)).all()
     creator = getUserInfo(catalog.user_id)
     if 'username' not in login_session or catalog.user_id != login_session['user_id']:
         return render_template('publicitems.html', items=items,
                                catalog=catalog,
-                               creator=creator)
+                               creator=creator,
+                               catalogs=catalogs)
     else:
         return render_template('items.html', items=items,
                                catalog=catalog,
-                               creator=creator)
+                               creator=creator,
+                               catalogs=catalogs)
      
 
 
@@ -427,9 +431,9 @@ def newItem(catalog_id):
         session.add(newItem)
         session.commit()
         flash('New Item Successfully Created')
-        return redirect(url_for('showItems', catalog_id=catalog_id))
+        return redirect(url_for('showItems', catalog_id=catalog.id))
     else:
-        return render_template('newitem.html', catalog_id=catalog_id)
+        return render_template('newitem.html', catalog=catalog)
 
 # Edit a item
 @app.route('/catalog/<int:catalog_id>/items/<int:item_id>/edit', methods=['GET', 'POST'])
@@ -471,7 +475,7 @@ def deleteItem(catalog_id, item_id):
         flash('Item Successfully Deleted')
         return redirect(url_for('showItems', catalog_id=catalog_id))
     else:
-        return render_template('deletetem.html', item=itemToDelete)
+        return render_template('deleteitem.html', item=itemToDelete)
 
 
 

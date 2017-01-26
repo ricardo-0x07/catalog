@@ -33,15 +33,38 @@
 		</div>
 		<div class="col-md-1"></div>
 	</div>
-	{% for catalog in catalogs %}
-		<a href = "{{url_for('showMenu', catalog_id = catalog.id)}}">
-			<div class="row">
-				<div class="col-md-1"></div>
-					<div class="col-md-10 catalog-list">
-						<h3>{{catalog.name}}</h3>
+	<div class="row panel-body">
+		<div class="col-xs-4">
+			<h2>Categories</h2>
+			<div class="list-group">
+			{% for catalog in catalogs %}
+				<a href = "{{url_for('showItems', catalog_id = catalog.id)}}" class="list-group-item">
+					<div class="row">
+						<div class="col-md-1"></div>
+							<div class="col-md-10 catalog-list">
+								<h3>{{catalog.name}}</h3>
+							</div>
+						<div class="col-md-1"></div>
 					</div>
-				<div class="col-md-1"></div>
-			</div>
-		</a>
-	{% endfor %}
+				</a>
+			{% endfor %}	
+			</div>		
+		</div>
+		<div class="col-xs-8">
+			<h2>Latest Items</h2>
+			<div class="list-group">
+			{% for item in items %}
+				<a href = "{{url_for('showItems', catalog_id = item.catalog_id)}}" class="list-group-item">
+					<div class="row">
+						<div class="col-md-1"></div>
+							<div class="col-md-10 item.-list">
+								<h3>{{item.catalog.name}} - {{item.name}}</h3>
+							</div>
+						<div class="col-md-1"></div>
+					</div>
+				</a>
+			{% endfor %}
+			</div>			
+		</div>
+	</div>
 {% endblock %}
