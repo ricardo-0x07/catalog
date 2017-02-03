@@ -32,8 +32,8 @@
 	<div class="row ">
 		<div class="col-md-1"></div>
 		<div class="col-md-10 padding-none">
-			<a href="{{url_for('newCatalog')}}">
-				<button class="btn btn-default" id="new-catalog">
+			<a href="{{url_for('newCategory')}}">
+				<button class="btn btn-default" id="new-category">
 					<span class="glyphicon glyphicon-list" aria-hidden="true"></span>Add Catalog
 				</button>
 			</a>
@@ -46,7 +46,7 @@
 			<h2>Categories</h2>
 			<div class="list-group">
 			{% for catalog in catalogs %}
-				<a href = "{{url_for('showItems', catalog_name = catalog.name)}}" class="list-group-item">
+				<a href = "{{url_for('showItems', category_name = catalog.name)}}" class="list-group-item">
 					<div class="row">
 						<div class="col-md-1"></div>
 							<div class="col-md-10 catalog-list">
@@ -62,7 +62,7 @@
 			<h2>Latest Items</h2>
 			<div class="list-group">
 			{% for item in items %}
-				<a href = "{{url_for('showItems', catalog_name = item.catalog.name)}}" class="list-group-item">
+				<a href = "{{url_for('showItems', category_name = item.catalog.name)}}" class="list-group-item">
 					<div class="row">
 						<div class="col-md-1"></div>
 							<div class="col-md-10 item.-list">

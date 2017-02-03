@@ -5,10 +5,10 @@
 	</div>
 	<div class="row banner menu">
 		<div class="col-md-11 col-md-offset-1 padding-none">
-			<h1 style="text-transform: capitalize;">{{ catalog.name }} - {{ item.name }}
+			<h1 style="text-transform: capitalize;">{{ category.name }} - {{ item.name }}
 			<figure class="creator">
 				<img src="{{ url_for('static', filename='blank_user.gif') }}">
-				<figcaption>Created by: {{catalog.user.name}}</figcaption>
+				<figcaption>Created by: {{category.user.name}}</figcaption>
 			</figure>
 			</h1>
 
@@ -23,8 +23,8 @@
 							<p>{{item.description}}</p>
 							<p class="menu-price">US$ {{item.price}}</p>
 							{% if session.username %}
-							<a href='{{url_for('editItem', catalog_name = catalog.name, item_name=item.name ) }}'>Edit</a> | 
-							<a href='{{url_for('deleteItem', catalog_name = catalog.name, item_name=item.name ) }}'>Delete</a>
+							<a href='{{url_for('editItem', category_name = category.name, item_name=item.name ) }}'>Edit</a> | 
+							<a href='{{url_for('deleteItem', category_name = category.name, item_name=item.name ) }}'>Delete</a>
 							{% endif %}
 						</div>
 					</div>

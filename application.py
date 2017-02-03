@@ -1,3 +1,26 @@
+# MIT License
+
+# Copyright (c) 2016 Clive Cadogan
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
 from functools import wraps
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
 from sqlalchemy import create_engine, asc
@@ -29,9 +52,12 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 
-# Create anti-forgery state token
 @app.route('/login')
 def showLogin():
+    """Create anti-forgery state token
+
+    Return: renders the login page.
+    """
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
     login_session['state'] = state
@@ -39,8 +65,18 @@ def showLogin():
 
 
 def login_required(f):
+    """Wrap and replace function.
+
+    Args: f: decorated function.
+    Return: the decorated function.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        """Check if a suser is loggin..
+
+        Return: renders login page if a user is not logged in.
+        or returns the decorated function.
+        """
         if 'username' not in login_session:
             return redirect(url_for('showLogin', next=request.url))
         return f(*args, **kwargs)
@@ -49,6 +85,12 @@ def login_required(f):
 
 @app.route('/fbconnect', methods=['POST', 'GET'])
 def fbconnect():
+    """Sign user in with facebook credentials.
+
+    Return: a Invalid state parameter message when state parameter is not valid
+     or Success message when user has successfully signed in with facebook
+     credentials.
+    """
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
@@ -68,9 +110,10 @@ def fbconnect():
     print app_secret
     print 'access_token'
     print access_token
-    url = """https://graph.facebook.com/oauth/access_token?grant_type=
-    fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s""" % (
+    url = """https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s""" % (
         app_id, app_secret, access_token)
+    print 'url'
+    print url
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
     print 'token result'
@@ -95,8 +138,7 @@ def fbconnect():
     login_session['facebook_id'] = data['id']
 
     # get user picture
-    url = """https://graph.facebook.com/v2.4/me/picture?%s&redirect=0&height=200&
-    width=200""" % token
+    url = """https://graph.facebook.com/v2.4/me/picture?%s&redirect=0&height=200&width=200""" % token
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
     print 'picture result'
@@ -126,6 +168,12 @@ def fbconnect():
 
 @app.route('/gconnect', methods=['POST', 'GET'])
 def gconnect():
+    """Sign users in with google credentials.
+
+    Return: a Invalid state parameter message when state parameter is not valid
+     or Success message when user has successfully signed in with google
+     credentials.
+    """
     if request.args.get('state') != login_session['state']:
         print request.args.get('state')
         print login_session['state']
@@ -217,9 +265,12 @@ def gconnect():
 
 
 # User Helper Functions
-
-
 def createUser(login_session):
+    """Create a new user.
+
+    Args: login_session: login session object.
+    Return: users id number.
+    """
     newUser = User(name=login_session['username'], email=login_session[
                    'email'], picture=login_session['picture'])
     session.add(newUser)
@@ -229,13 +280,21 @@ def createUser(login_session):
 
 
 def getUserInfo(user_id):
-    print 'user_id'
-    print user_id
+    """Retrieve user object from database.
+
+    Args: user_id: users id number.
+    Return: user oject.
+    """
     user = session.query(User).filter_by(id=user_id).one()
     return user
 
 
 def getUserID(email):
+    """get user's id.
+
+    Args: email: user email address.
+    Return: user's id number of None is user does not exists in database.
+    """
     try:
         user = session.query(User).filter_by(email=email).one()
         return user.id
@@ -245,32 +304,29 @@ def getUserID(email):
 
 @app.route('/disconnect', methods=['POST', 'GET'])
 def disconnect():
+    """Sign users out based on providers.
+
+    Return: renders cataog.
+    """
     if 'provider' in login_session:
         if login_session['provider'] == 'google':
             gdisconnect()
-            # del login_session['credentials']
-            # del login_session['gplus_id']
         if login_session['provider'] == 'facebook':
             fbdisconnect()
-            # del login_session['facebook_id']
-        #  Reset the user's session.
-        # del login_session['username']
-        # del login_session['email']
-        # del login_session['picture']
-        # del login_session['provider']
-        # del login_session['user_id']
 
         flash("You have successfully been logged out")
-        return redirect(url_for('showCatalogs'))
+        return redirect(url_for('showCatalog'))
     else:
         flash("You were not logged in!")
-        response = make_response(json.dumps(
-            'Failed to revoke token for given user.', 400))
-        return redirect(url_for('showCatalogs'))
+        return redirect(url_for('showCatalog'))
 
 
 @app.route('/fbdisconnect', methods=['POST', 'GET'])
 def fbdisconnect():
+    """Sign users out with facebook credetials.
+
+    Return: message: 'You  have been successfully logged out!.
+    """
     facebook_id = login_session['facebook_id']
     url = 'https://graph.facebook.com/%s/permissions' % facebook_id
     h = httplib2.Http()
@@ -287,6 +343,10 @@ def fbdisconnect():
 
 @app.route('/gdisconnect', methods=['POST', 'GET'])
 def gdisconnect():
+    """Sign users out with gololge credetials.
+
+    Return: success or failure response.
+    """
     credentials = login_session['credentials']
     print 'In gdisconnect access token is %s', credentials
     print 'User name is: '
@@ -334,25 +394,36 @@ def gdisconnect():
 
 
 # JSON APIs to view Catalog Information
-@app.route('/catalog/<int:catalog_id>/item.json')
-def catalogJSON(catalog_id):
-    catalog = session.query(Catalog).filter_by(id=catalog_id).one()
-    print 'catalog.serialize'
-    print catalog.serialize
-    items = session.query(Item).filter_by(catalog_id=catalog_id).all()
+@app.route('/catalog/<category_name>/item.json')
+def catalogjson(category_name):
+    """Create json format of a category's items.
+
+    Return: JSOn object of the specified categories items.
+    """
+    category = session.query(Catalog).filter_by(name=category_name).one()
+    items = session.query(Item).filter_by(catalog=category).all()
     return jsonify({'items': [i.serialize for i in items]})
 
 
 @app.route('/catalog.json')
-def catalogsJSON():
+def catalogsjson():
+    """Create json format of the entire catalog with category's and thier items.
+
+    Return: JSON object of the entire catalo with it's categories and relatated
+    items.
+    """
     catalogs = session.query(Catalog).all()
     return jsonify(categories=[r.serialize for r in catalogs])
 
 
-# Show all catalogs
+# Show all categories
 @app.route('/')
 @app.route('/catalog/')
-def showCatalogs():
+def showCatalog():
+    """Show all categories.
+
+    Return: response to render catalog.
+    """
     catalogs = session.query(Catalog).order_by(asc(Catalog.name)).all()
     items = session.query(Item).order_by(asc(Item.created)).limit(10).all()
     print 'catalogs'
@@ -363,118 +434,151 @@ def showCatalogs():
 # Create a new catalog
 @app.route('/catalog/new/', methods=['GET', 'POST'])
 @login_required
-def newCatalog():
-    # if 'username' not in login_session:
-    #   return redirect('/login')
+def newCategory():
+    """Show all categories.
+
+    Return: response to render catalog.
+    """
     if request.method == 'POST':
-        newCatalog = Catalog(name=request.form['name'],
-                             user_id=login_session['user_id'])
-        session.add(newCatalog)
-        flash('New Catalog %s Successfully Created' % newCatalog.name)
+        newCategory = Catalog(name=request.form['name'],
+                              user_id=login_session['user_id'])
+        session.add(newCategory)
+        flash('New Catalog %s Successfully Created' % newCategory.name)
         session.commit()
-        return redirect(url_for('showCatalogs'))
+        return redirect(url_for('showCatalog'))
     else:
-        return render_template('newCatalog.html')
+        return render_template('newCategory.html')
 
 # Edit a catalog
 
 
-@app.route('/catalog/<catalog_name>/edit/', methods=['GET', 'POST'])
+@app.route('/catalog/<category_name>/edit/', methods=['GET', 'POST'])
 @login_required
-def editCatalog(catalog_name):
-    editedCatalog = session.query(Catalog).filter_by(name=catalog_name).one()
-    if editedCatalog.user_id != login_session['user_id']:
+def editCategory(category_name):
+    """Show all categories.
+
+    arges: category_name: name of the category to be edited.
+    Return: response to render the edit category form to allow editing of the
+    category or the catalog after the category has been edited.
+    """
+    editcategory = session.query(Catalog).filter_by(name=category_name).one()
+    if editcategory.user_id != login_session['user_id']:
         return """<script>function myFunction() {alert('You are not authorized 
-        to edit this catalog. Please create your own catalog in order to edit.');}
+        to edit this category. Please create your own category in order to edit.');}
         </script><body onload='myFunction()''>"""
     if request.method == 'POST':
         if request.form['name']:
-            editedCatalog.name = request.form['name']
-            flash('Catalog Successfully Edited %s' % editedCatalog.name)
-            return redirect(url_for('showCatalogs'))
+            editcategory.name = request.form['name']
+            flash('Catalog Successfully Edited %s' % editcategory.name)
+            return redirect(url_for('showCatalog'))
     else:
-        return render_template('editCatalog.html', catalog=editedCatalog)
+        return render_template('editCategory.html', category=editcategory)
 
 
 # Delete a catalog
-@app.route('/catalog/<catalog_name>/delete/', methods=['GET', 'POST'])
+@app.route('/catalog/<category_name>/delete/', methods=['GET', 'POST'])
 @login_required
-def deleteCatalog(catalog_name):
-    catalogToDelete = session.query(Catalog).filter_by(name=catalog_name).one()
-    if catalogToDelete.user_id != login_session['user_id']:
+def deleteCategory(category_name):
+    """Delete the specified category.
+
+    arges: category_name: name of the category to be deleted.
+    Return: response to render the delete category form to allow editing of the
+    category or the catalog after the category has been deleted.
+    """
+    categoryToDelete = session.query(Catalog).filter_by(name=category_name).one()
+    if categoryToDelete.user_id != login_session['user_id']:
         return """<script>function myFunction() {alert('You are not authorized to 
-        delete this catalog. Please create your own catalog in order to delete.');}
+        delete this category. Please create your own category in order to delete.');}
         </script><body onload='myFunction()''>"""
     if request.method == 'POST':
-        session.delete(catalogToDelete)
-        flash('%s Successfully Deleted' % catalogToDelete.name)
+        session.delete(categoryToDelete)
+        flash('%s Successfully Deleted' % categoryToDelete.name)
         session.commit()
-        return redirect(url_for('showCatalogs'))
+        return redirect(url_for('showCatalog'))
     else:
-        return render_template('deleteCatalog.html', catalog=catalogToDelete)
+        return render_template('deleteCategory.html', category=categoryToDelete)
 
 
 # Show a catalog's items
-@app.route('/catalog/<catalog_name>/')
-@app.route('/catalog/<catalog_name>/items/')
-def showItems(catalog_name):
-    print 'catalog_name'
-    print catalog_name
-    catalog = session.query(Catalog).filter_by(name=catalog_name).one()
-    items = session.query(Item).filter_by(catalog_id=catalog.id).all()
-    catalogs = session.query(Catalog).order_by(asc(Catalog.name)).all()
-    creator = getUserInfo(catalog.user_id)
+@app.route('/catalog/<category_name>/')
+@app.route('/catalog/<category_name>/items/')
+def showItems(category_name):
+    """Show items for a specified category.
+
+    arges: category_name: name of the category for which items are to be
+    displayed.
+    Return: response to render the category items.
+    """
+    category = session.query(Catalog).filter_by(name=category_name).one()
+    items = session.query(Item).filter_by(catalog_id=category.id).all()
+    categories = session.query(Catalog).order_by(asc(Catalog.name)).all()
+    creator = getUserInfo(category.user_id)
     return render_template('items.html', items=items,
-                           catalog=catalog,
+                           category=category,
                            creator=creator,
-                           catalogs=catalogs)
+                           categories=categories)
 
 
 # Create a new item
-@app.route('/catalog/<catalog_name>/items/new/', methods=['GET', 'POST'])
+@app.route('/catalog/<category_name>/items/new/', methods=['GET', 'POST'])
 @login_required
-def newItem(catalog_name):
-    catalog = session.query(Catalog).filter_by(name=catalog_name).one()
-    if login_session['user_id'] != catalog.user_id:
-        return """<script>function myFunction() {alert('You are not authorized to 
-        add items to this catalog. Please create your own catalog in order to 
+def newItem(category_name):
+    """Create new item for a specified category.
+
+    arges: category_name: name of the category for which the new item wil be
+    created.
+    Return: response to render the new item form or
+    the category items after the new item has been created.
+    """
+    category = session.query(Catalog).filter_by(name=category_name).one()
+    if login_session['user_id'] != category.user_id:
+        return """<script>function myFunction() {alert('You are not authorized to
+        add items to this category. Please create your own category in order to
         add items.');}
         </script><body onload='myFunction()''>"""
     if request.method == 'POST':
         newItem = Item(name=request.form['name'],
                        description=request.form['description'],
                        price=request.form['price'],
-                       catalog_id=catalog.id,
-                       user_id=catalog.user_id)
+                       catalog_id=category.id,
+                       user_id=category.user_id)
         session.add(newItem)
         session.commit()
         flash('New Item Successfully Created')
-        return redirect(url_for('showItems', catalog_name=catalog_name))
+        return redirect(url_for('showItems', category_name=category_name))
     else:
-        return render_template('newitem.html', catalog=catalog)
+        return render_template('newitem.html', category=category)
 
 
-# View a item
-@app.route('/catalog/<string:catalog_name>/<string:item_name>/view')
-def viewItem(catalog_name, item_name):
-    print 'item_name'
-    print item_name
+@app.route('/catalog/<category_name>/<item_name>/view')
+def viewItem(category_name, item_name):
+    """Render an item.
+
+    arges: category_name: name of the category for the item to be viewed.
+    item_name: name of the item to be viewed.
+    Return: response to render item.html.
+    """
     item = session.query(Item).filter_by(name=item_name).one()
-    catalog = session.query(Catalog).filter_by(name=catalog_name).one()
-    return render_template('item.html', catalog=catalog, item=item)
+    category = session.query(Catalog).filter_by(name=category_name).one()
+    return render_template('item.html', category=category, item=item)
 
 
 # Edit a item
-@app.route('/catalog/<catalog_name>/<item_name>/edit', methods=['GET', 'POST'])
-def editItem(catalog_name, item_name):
+@app.route('/catalog/<category_name>/<item_name>/edit', methods=['GET', 'POST'])
+def editItem(category_name, item_name):
+    """Edit an item.
 
+    arges: category_name: name of the category for the item to be edited.
+    item_name: name of the item to be edited.
+    Return: response to render edititem.html.
+    """
     if 'username' not in login_session:
         return redirect('/login')
     editedItem = session.query(Item).filter_by(name=item_name).one()
-    catalog = session.query(Catalog).filter_by(name=catalog_name).one()
-    if login_session['user_id'] != catalog.user_id:
+    category = session.query(Catalog).filter_by(name=category_name).one()
+    if login_session['user_id'] != category.user_id:
         return """<script>function myFunction() {alert('You are not authorized to 
-        edit items to this catalog. Please create your own catalog in order to 
+        edit items to this category. Please create your own category in order to 
         edit items.');}
         </script><body onload='myFunction()''>"""
     if request.method == 'POST':
@@ -487,30 +591,35 @@ def editItem(catalog_name, item_name):
         session.add(editedItem)
         session.commit()
         flash('Item Successfully Edited')
-        return redirect(url_for('showItems', catalog_id=catalog.id))
+        return redirect(url_for('showItems', category_name=category.name))
     else:
-        return render_template('edititem.html', catalog=catalog, item=editedItem)
+        return render_template('edititem.html', category=category,
+                               item=editedItem)
 
 
 # Delete a item
-@app.route('/catalog/<catalog_name>/<item_name>/delete', methods=['GET', 'POST'])
-def deleteItem(catalog_name, item_name):
-    print 'request.referrer'
-    print request.referrer
-    if 'username' not in login_session:
-        return redirect('/login')
-    catalog = session.query(Catalog).filter_by(name=catalog_name).one()
+@app.route('/catalog/<category_name>/<item_name>/delete',
+           methods=['GET', 'POST'])
+@login_required
+def deleteItem(category_name, item_name):
+    """Delete an item.
+
+    arges: category_name: name of the category for the item to be deleted.
+    item_name: name of the item to be deleted.
+    Return: response to render deleteitem.html.
+    """
+    category = session.query(Catalog).filter_by(name=category_name).one()
     itemToDelete = session.query(Item).filter_by(name=item_name).one()
-    if login_session['user_id'] != catalog.user_id:
+    if login_session['user_id'] != category.user_id:
         return """<script>function myFunction() {alert('You are not authorized to 
-        delete items to this catalog. Please create your own catalog in order 
+        delete items to this category. Please create your own category in order 
         to delete items.');}
         </script><body onload='myFunction()''>"""
     if request.method == 'POST':
         session.delete(itemToDelete)
         session.commit()
         flash('Item Successfully Deleted')
-        return redirect(url_for('showItems', catalog_name=catalog_name))
+        return redirect(url_for('showItems', category_name=category_name))
     else:
         return render_template('deleteitem.html', item=itemToDelete)
 
