@@ -3,8 +3,15 @@ import datetime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
  
 Base = declarative_base()
+#Connect to Database and create database session
+engine = create_engine('sqlite:///catalog.db')
+Base.metadata.bind = engine
+
+DBSession = sessionmaker(bind=engine)
+session = DBSession()
 
 class User(Base):
     __tablename__ = 'user'
@@ -27,9 +34,11 @@ class Catalog(Base):
     @property
     def serialize(self):
        """Return object data in easily serializeable format"""
+       items = session.query(Item).filter_by(catalog_id = self.id).all()
        return {
            'name'         : self.name,
            'id'           : self.id,
+           'items':[i.serialize for i in items]
        }
  
 class Item(Base):

@@ -5,7 +5,7 @@
 	</div>
 	<div class="row banner menu">
 		<div class="col-md-11 col-md-offset-1 padding-none">
-			<h1>{{ catalog.name }}
+			<h1>{{ catalog.name }} - ({{ items | length }} items)
 			<figure class="creator">
 				<img src="{{ url_for('static', filename='blank_user.gif') }}">
 				<figcaption>Created by: {{catalog.user.name}}</figcaption>
@@ -28,20 +28,21 @@
 	    {% endwith %}
 
 	</div>
+	{% if session.username %}
 	<div class="row padding-top padding-bottom">
 		<div class="col-md-1"></div>
 		<div class="col-md-11 padding-none">
-			<a href="{{url_for('editCatalog', catalog_id = catalog.id )}}">
+			<a href="{{url_for('editCatalog', catalog_name = catalog.name )}}">
 				<button class="btn btn-default" id="new-item">
 					<span class="glyphicon glyphicon-edit" aria-hidden="true"></span>Edit Catalog
 				</button>
 			</a>
-			<a href="{{url_for('newItem', catalog_id = catalog.id )}}">
+			<a href="{{url_for('newItem', catalog_name = catalog.name )}}">
 				<button class="btn btn-default" id="new-item">
 					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Item
 				</button>
 			</a>
-						<a href="{{url_for('deleteCatalog', catalog_id = catalog.id )}}">
+						<a href="{{url_for('deleteCatalog', catalog_name = catalog.name )}}">
 				<button class="btn btn-default delete" id="delete-catalog">
 					<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>Delete Catalog
 				</button>
@@ -49,12 +50,13 @@
 		</div>
 		<div class="col-md-7"></div>
 	</div>
+	{% endif %}
 	<div class="row">
 		<div class="col-xs-4 panel-body">
 			<h2>Categories</h2>
 			<div class="list-group">
 			{% for catalog in catalogs %}
-				<a href = "{{url_for('showItems', catalog_id = catalog.id)}}" class="list-group-item">
+				<a href = "{{url_for('showItems', catalog_name = catalog.name)}}" class="list-group-item">
 					<div class="row">
 						<div class="col-md-1"></div>
 							<div class="col-md-10 catalog-list">
@@ -74,11 +76,13 @@
 						{% for i in items %}
 						<div class=" panel panel-default col-xs-12 col-md-6 col-lg-4 pre-scrollable" style="min-height: 34rem; box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);">
 							<div >
-								<h3>{{i.name}}</h3>
+								<a href="{{url_for('viewItem', catalog_name = catalog.name, item_name=i.name )}}"><h3>{{i.name}}</h3></a>
 								<p>{{i.description}}</p>
 								<p class="menu-price">US$ {{i.price}}</p>
-								<a href='{{url_for('editItem', catalog_id = catalog.id, item_id=i.id ) }}'>Edit</a> | 
-								<a href='{{url_for('deleteItem', catalog_id = catalog.id, item_id=i.id ) }}'>Delete</a>
+								{% if session.username %}
+								<a href="{{url_for('editItem', catalog_name = catalog.name, item_name=i.name ) }}">Edit</a> | 
+								<a href="{{url_for('deleteItem', catalog_name = catalog.name, item_name=i.name ) }}">Delete</a>
+								{% endif %}
 							</div>
 						</div>
 						{% endfor %}

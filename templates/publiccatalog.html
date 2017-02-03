@@ -1,44 +1,29 @@
 {% extends "main.html" %}
 {% block content %}
-	<div class="row divider blue">
-		<div class="col-md-12"></div>
-	</div>
-	<div class="row banner main">
-		<div class="col-md-1"></div>
-		<div class="col-md-11 padding-none">
-			<h1>Catalogs</h1>
-		</div>
-	</div>
-
 	<div class = 'flash'>
-		      {% with messages = get_flashed_messages() %}
-      {% if messages %}
-          
-        <ul>
-        {% for message in messages %}
-            <li> <strong> {{ message }} </strong> </li>
-        {% endfor %}
-        </ul>
-        {% endif %}
-    {% endwith %}
-
-</div>
-
-
-	
-	<div class="row padding-top padding-bottom">
+		{% with messages = get_flashed_messages() %}
+	        {% if messages %}          
+		        <ul>
+		        {% for message in messages %}
+		            <li> <strong> {{ message }} </strong> </li>
+		        {% endfor %}
+		        </ul>
+	        {% endif %}
+	    {% endwith %}
+	</div>
+<!-- 	<div class="row ">
 		<div class="col-md-1"></div>
 		<div class="col-md-10 padding-none">
 			
 		</div>
 		<div class="col-md-1"></div>
-	</div>
+	</div> -->
 	<div class="row panel-body">
 		<div class="col-xs-4">
 			<h2>Categories</h2>
 			<div class="list-group">
 			{% for catalog in catalogs %}
-				<a href = "{{url_for('showItems', catalog_id = catalog.id)}}" class="list-group-item">
+				<a href = "{{url_for('showItems', catalog_name = catalog.name)}}" class="list-group-item">
 					<div class="row">
 						<div class="col-md-1"></div>
 							<div class="col-md-10 catalog-list">
@@ -54,7 +39,7 @@
 			<h2>Latest Items</h2>
 			<div class="list-group">
 			{% for item in items %}
-				<a href = "{{url_for('showItems', catalog_id = item.catalog_id)}}" class="list-group-item">
+				<a href = "{{url_for('showItems', catalog_name = item.catalog.name)}}" class="list-group-item">
 					<div class="row">
 						<div class="col-md-1"></div>
 							<div class="col-md-10 item.-list">
