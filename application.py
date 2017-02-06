@@ -22,7 +22,7 @@
 
 
 from functools import wraps
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
+from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, abort
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, User, Catalog, Item
@@ -54,14 +54,42 @@ session = DBSession()
 
 @app.route('/login')
 def showLogin():
-    """Create anti-forgery state token
+    """Create anti-forgery state token.
 
     Return: renders the login page.
     """
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in xrange(32))
     login_session['state'] = state
+    # Set new random CRSF TOKEN value
+    app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
     return render_template('login.html', STATE=state)
+
+
+@app.before_request
+def csrf_protect():
+    """Check csrf token on post requests."""
+    if request.method == "POST":
+        token = login_session['_csrf_token']
+        if '_csrf_token' in request.form:
+            if not token or token != request.form['_csrf_token']:
+                abort(403)
+        else:
+            if not token or token != request.args.get('token'):
+                abort(403)
+
+
+def generate_csrf_token():
+    """Generate csrf tokens and store in session.
+
+    Return: generated csrf token
+    """
+    if '_csrf_token' not in login_session:
+        login_session['_csrf_token'] = ''.join(random.
+                                               choice(string.ascii_uppercase +
+                                                      string.digits) for x
+                                               in xrange(32))
+    return login_session['_csrf_token']
 
 
 def login_required(f):
@@ -149,11 +177,10 @@ def fbconnect():
     login_session['picture'] = 'picture'
 
     user_id = getUserID(login_session['email'])
-    if user_id == None:
-        user_id = createUser(login_session)
+    if user_id is None:
+        user_id = createuser(login_session)
 
     login_session['user_id'] = user_id
-
     output = ''
     output += '<h1>Welcome, '
     output += login_session['username']
@@ -174,6 +201,8 @@ def gconnect():
      or Success message when user has successfully signed in with google
      credentials.
     """
+    print "request.args.get('state')"
+    print request.args.get('state')
     if request.args.get('state') != login_session['state']:
         print request.args.get('state')
         print login_session['state']
@@ -241,14 +270,13 @@ def gconnect():
     answer = requests.get(userinfo_url, params=params)
 
     data = answer.json()
-
     login_session['provider'] = 'google'
     login_session['username'] = data['name']
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
     user_id = getUserID(data['email'])
-    if user_id == None:
-        user_id = createUser(login_session)
+    if user_id is None:
+        user_id = createuser(login_session)
 
     login_session['user_id'] = user_id
 
@@ -265,7 +293,7 @@ def gconnect():
 
 
 # User Helper Functions
-def createUser(login_session):
+def createuser(login_session):
     """Create a new user.
 
     Args: login_session: login session object.
@@ -302,6 +330,33 @@ def getUserID(email):
         return None
 
 
+def getcategoryid(name):
+    """Get category's id.
+
+    Args: name: category name.
+    Return: category's id number of None is category does not exists in database.
+    """
+    try:
+        category = session.query(Catalog).filter_by(name=name).one()
+        return category.id
+    except:
+        return None
+
+
+def getitemid(name, category_id):
+    """Get item's id.
+
+    Args: name: item's name. category_id: items category id.
+    Return: item's id number of None is item does not exists in database.
+    """
+    try:
+        item = session.query(Item).filter(
+            Item.name==name, Item.catalog_id==category_id).one()
+        return item.id
+    except:
+        return None
+
+
 @app.route('/disconnect', methods=['POST', 'GET'])
 def disconnect():
     """Sign users out based on providers.
@@ -309,11 +364,21 @@ def disconnect():
     Return: renders cataog.
     """
     if 'provider' in login_session:
+        print "login_session['provider']"
+        print login_session['provider']
         if login_session['provider'] == 'google':
             gdisconnect()
+            del login_session['gplus_id']
+            del login_session['credentials']
         if login_session['provider'] == 'facebook':
             fbdisconnect()
+            del login_session['facebook_id']
 
+        del login_session['username']
+        del login_session['email']
+        del login_session['picture']
+        del login_session['user_id']
+        del login_session['provider']
         flash("You have successfully been logged out")
         return redirect(url_for('showCatalog'))
     else:
@@ -331,13 +396,6 @@ def fbdisconnect():
     url = 'https://graph.facebook.com/%s/permissions' % facebook_id
     h = httplib2.Http()
     result = h.request(url, 'DELETE')[1]
-    del login_session['user_id']
-    del login_session['facebook_id']
-    del login_session['username']
-    del login_session['email']
-    del login_session['picture']
-    del login_session['provider']
-
     return 'You  have been successfully logged out!'
 
 
@@ -372,21 +430,10 @@ def gdisconnect():
     print 'status'
     print result['status']
     if result['status'] == 200:
-        print 'status'
-        print result['status']
-        #  Reset the user's session.
-        del login_session['credentials']
-        del login_session['gplus_id']
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
-        del login_session['provider']
-
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
     else:
-
         response = make_response(json.dumps(
             'Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
@@ -440,13 +487,21 @@ def newCategory():
     Return: response to render catalog.
     """
     if request.method == 'POST':
-        newCategory = Catalog(name=request.form['name'],
-                              user_id=login_session['user_id'])
-        session.add(newCategory)
-        flash('New Catalog %s Successfully Created' % newCategory.name)
-        session.commit()
-        return redirect(url_for('showCatalog'))
+        category_id = getcategoryid(request.form['name'])
+        if category_id == None:
+            newCategory = Catalog(name=request.form['name'],
+                                  user_id=login_session['user_id'])
+            session.add(newCategory)
+            flash('New Catalog %s Successfully Created' % newCategory.name)
+            session.commit()
+            return redirect(url_for('showCatalog'))
+        else:
+            flash('The %s category already exists! Kindly create a new category.' %
+                  request.form['name'])
+            return redirect(url_for('showCatalog'))
     else:
+        # Set new random CRSF TOKEN value
+        app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
         return render_template('newCategory.html')
 
 # Edit a catalog
@@ -461,17 +516,21 @@ def editCategory(category_name):
     Return: response to render the edit category form to allow editing of the
     category or the catalog after the category has been edited.
     """
+    print 'editCategory'
     editcategory = session.query(Catalog).filter_by(name=category_name).one()
-    if editcategory.user_id != login_session['user_id']:
-        return """<script>function myFunction() {alert('You are not authorized 
-        to edit this category. Please create your own category in order to edit.');}
-        </script><body onload='myFunction()''>"""
+    if editcategory.user.name != login_session['username']:
+        print "if editcategory.user_id != login_session['user_id']:"
+        return """<script>function myFunction() {alert('You are not authorized to edit this category. Please create your own category in order to edit.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
+        print "if request.method == 'POST':"
         if request.form['name']:
             editcategory.name = request.form['name']
             flash('Catalog Successfully Edited %s' % editcategory.name)
             return redirect(url_for('showCatalog'))
     else:
+        print " else:"
+        # Set new random CRSF TOKEN value
+        app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
         return render_template('editCategory.html', category=editcategory)
 
 
@@ -485,18 +544,19 @@ def deleteCategory(category_name):
     Return: response to render the delete category form to allow editing of the
     category or the catalog after the category has been deleted.
     """
-    categoryToDelete = session.query(Catalog).filter_by(name=category_name).one()
-    if categoryToDelete.user_id != login_session['user_id']:
-        return """<script>function myFunction() {alert('You are not authorized to 
-        delete this category. Please create your own category in order to delete.');}
-        </script><body onload='myFunction()''>"""
+    categorytodelete = session.query(
+        Catalog).filter_by(name=category_name).one()
+    if categorytodelete.user.name != login_session['username']:
+        return """<script>function myFunction() {alert('You are not authorized to delete this category. Please create your own category in order to delete.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
-        session.delete(categoryToDelete)
-        flash('%s Successfully Deleted' % categoryToDelete.name)
+        session.delete(categorytodelete)
+        flash('%s Successfully Deleted' % categorytodelete.name)
         session.commit()
         return redirect(url_for('showCatalog'))
     else:
-        return render_template('deleteCategory.html', category=categoryToDelete)
+        # Set new random CRSF TOKEN value
+        app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
+        return render_template('deleteCategory.html', category=categorytodelete)
 
 
 # Show a catalog's items
@@ -531,22 +591,30 @@ def newItem(category_name):
     the category items after the new item has been created.
     """
     category = session.query(Catalog).filter_by(name=category_name).one()
-    if login_session['user_id'] != category.user_id:
-        return """<script>function myFunction() {alert('You are not authorized to
-        add items to this category. Please create your own category in order to
-        add items.');}
-        </script><body onload='myFunction()''>"""
+    if category.user.name != login_session['username']:
+        return """<script>function myFunction() {alert('You are not authorized to add items to this category. Please create your own category in order to add items.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
-        newItem = Item(name=request.form['name'],
-                       description=request.form['description'],
-                       price=request.form['price'],
-                       catalog_id=category.id,
-                       user_id=category.user_id)
-        session.add(newItem)
-        session.commit()
-        flash('New Item Successfully Created')
-        return redirect(url_for('showItems', category_name=category_name))
+        item_id = getitemid(request.form['name'], category.id)
+        print 'item_id'
+        print item_id
+        if item_id == None:
+            newitem = Item(name=request.form['name'],
+                           description=request.form['description'],
+                           price=request.form['price'],
+                           photo=request.form['photo'],
+                           catalog_id=category.id,
+                           user_id=category.user_id)
+            session.add(newitem)
+            session.commit()
+            flash('New Item Successfully Created')
+            return redirect(url_for('showItems', category_name=category_name))
+        else:
+            flash('The %s item already exists! Kindly create a new item.' %
+                  request.form['name'])
+            return redirect(url_for('showItems', category_name=category_name))
     else:
+        # Set new random CRSF TOKEN value
+        app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
         return render_template('newitem.html', category=category)
 
 
@@ -574,27 +642,28 @@ def editItem(category_name, item_name):
     """
     if 'username' not in login_session:
         return redirect('/login')
-    editedItem = session.query(Item).filter_by(name=item_name).one()
+    editeditem = session.query(Item).filter_by(name=item_name).one()
     category = session.query(Catalog).filter_by(name=category_name).one()
-    if login_session['user_id'] != category.user_id:
-        return """<script>function myFunction() {alert('You are not authorized to 
-        edit items to this category. Please create your own category in order to 
-        edit items.');}
-        </script><body onload='myFunction()''>"""
+    if category.user.name != login_session['username']:
+        return """<script>function myFunction() {alert('You are not authorized to edit items to this category. Please create your own category in order to edit items.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
         if request.form['name']:
-            editedItem.name = request.form['name']
+            editeditem.name = request.form['name']
         if request.form['description']:
-            editedItem.description = request.form['description']
+            editeditem.description = request.form['description']
         if request.form['price']:
-            editedItem.price = request.form['price']
-        session.add(editedItem)
+            editeditem.price = request.form['price']
+        if request.form['photo']:
+            editeditem.photo = request.form['photo']
+        session.add(editeditem)
         session.commit()
         flash('Item Successfully Edited')
         return redirect(url_for('showItems', category_name=category.name))
     else:
+        # Set new random CRSF TOKEN value
+        app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
         return render_template('edititem.html', category=category,
-                               item=editedItem)
+                               item=editeditem)
 
 
 # Delete a item
@@ -609,19 +678,18 @@ def deleteItem(category_name, item_name):
     Return: response to render deleteitem.html.
     """
     category = session.query(Catalog).filter_by(name=category_name).one()
-    itemToDelete = session.query(Item).filter_by(name=item_name).one()
-    if login_session['user_id'] != category.user_id:
-        return """<script>function myFunction() {alert('You are not authorized to 
-        delete items to this category. Please create your own category in order 
-        to delete items.');}
-        </script><body onload='myFunction()''>"""
+    itemtodelete = session.query(Item).filter_by(name=item_name).one()
+    if login_session['username'] != category.user.name:
+        return """<script>function myFunction() {alert('You are not authorized to delete items to this category. Please create your own category in order to delete items.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
-        session.delete(itemToDelete)
+        session.delete(itemtodelete)
         session.commit()
         flash('Item Successfully Deleted')
         return redirect(url_for('showItems', category_name=category_name))
     else:
-        return render_template('deleteitem.html', item=itemToDelete)
+        # Set new random CRSF TOKEN value
+        app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
+        return render_template('deleteitem.html', item=itemtodelete)
 
 
 if __name__ == '__main__':

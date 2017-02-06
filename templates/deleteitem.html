@@ -3,7 +3,7 @@
 <h2 style="text-transform: capitalize;"> Are you sure you want to delete {{item.catalog.name }} - {{ item.name }}? </h2>
 
 <form action="#" method = 'post'>
-
+	<input type=hidden name=_csrf_token value="{{ _csrf_token }}">
 	<button type="submit" class="btn btn-default delete" id="submit" type="submit">
 	<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>Delete</button>
 

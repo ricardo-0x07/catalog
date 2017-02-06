@@ -58,7 +58,7 @@
       // send the one-time-use code to the server if the server responds, write a 'Login Successful' to the web page and then redirect back to the main catalogs page.
       $.ajax({
         type: 'POST',
-        url: '/gconnect?state={{STATE}}',
+        url: '/gconnect?state={{STATE}}&token={{ _csrf_token }}',
         processData: false,
         contentType: 'application/octet-stream; charset=utf-8',
         data: authResult['code'],

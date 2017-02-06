@@ -1,60 +1,75 @@
-# OAuth2.0
-Starter Code for Auth&amp;Auth course
-# Installing the Vagrant VM for ud330 - Authentication & Authorization
+# full-stack-web-developer-nanodegree: cataog
+1. For this project was done as a requirements for the Udacity Full Stack Nanodegree. The application provides a list of items within a variety of categories as well as provide a user registration and authentication system. Registered users will have the ability to post, edit and delete their own items.
 
-**Note: If you already have a vagrant machine installed from previous Udacity courses skip to the 'Fetch the Source Code and VM Configuration' section**
+2. The main technologies used in this project are Python, Flask, Sqlachemy, oauth2 and sqlite.
 
-In Lessons 2,3 and 4 of this course, you'll use a virtual machine (VM) to run a web server and a web app that uses it. The VM is a Linux system that runs on top of your own machine.  You can share files easily between your computer and the VM.
-
-We're using the Vagrant software to configure and manage the VM. Here are the tools you'll need to install to get it running:
-
-### Git
-
-If you don't already have Git installed, [download Git from git-scm.com.](http://git-scm.com/downloads) Install the version for your operating system.
-
-On Windows, Git will provide you with a Unix-style terminal and shell (Git Bash).  
-(On Mac or Linux systems you can use the regular terminal program.)
-
-You will need Git to install the configuration for the VM. If you'd like to learn more about Git, [take a look at our course about Git and Github](http://www.udacity.com/course/ud775).
-
-### VirtualBox
-
-VirtualBox is the software that actually runs the VM. [You can download it from virtualbox.org, here.](https://www.virtualbox.org/wiki/Downloads)  Install the *platform package* for your operating system.  You do not need the extension pack or the SDK. You do not need to launch VirtualBox after installing it.
-
-**Ubuntu 14.04 Note:** If you are running Ubuntu 14.04, install VirtualBox using the Ubuntu Software Center, not the virtualbox.org web site. Due to a [reported bug](http://ubuntuforums.org/showthread.php?t=2227131), installing VirtualBox from the site may uninstall other software you need.
-
-### Vagrant
-
-Vagrant is the software that configures the VM and lets you share files between your host computer and the VM's filesystem.  [You can download it from vagrantup.com.](https://www.vagrantup.com/downloads) Install the version for your operating system.
-
-**Windows Note:** The Installer may ask you to grant network permissions to Vagrant or make a firewall exception. Be sure to allow this.
-
-## Fetch the Source Code and VM Configuration
-
-**Windows:** Use the Git Bash program (installed with Git) to get a Unix-style terminal.  
-**Other systems:** Use your favorite terminal program.
-
-From the terminal, run:
-
-    git clone https://github.com/udacity/OAuth2.0 oauth
-
-This will give you a directory named **oauth** complete with the source code for the flask application, a vagrantfile, and a bootstrap.sh file for installing all of the necessary tools. 
-
-## Run the virtual machine!
-
-Using the terminal, change directory to oauth (**cd oauth**), then type **vagrant up** to launch your virtual machine.
+3. Skills gained: 
+  a. to design and implement features in fullstack application.
+  b. to quickly learn and utilize new frameworks.
+  c. implement persistent data storage
+  d. to develop a RESTful web application using the Python framework Flask along with implementing third-party OAuth authentication
+  e. to properly use the various HTTP methods available to you and how these methods relate to CRUD (create, read, update and delete) operations.
+  f. to efficiently interacting with data.
+  g. to properly implementing authentication mechanisms and appropriately mapping HTTP methods to CRUD operations.
 
 
-## Running the Restaurant Menu App
-Once it is up and running, type **vagrant ssh**. This will log your terminal into the virtual machine, and you'll get a Linux shell prompt. When you want to log out, type **exit** at the shell prompt.  To turn the virtual machine off (without deleting anything), type **vagrant halt**. If you do this, you'll need to run **vagrant up** again before you can log into it.
+# Installation and Running
+
+1. Fork the repository, download. 
+2. In a ubuntu enviroment (VM) Install the required packages by running: 'sudo sh ./pg_config.sh'
+3. Navigate to the project's root directory in the command line and run 'python appication.py' and enter the following url in your default browser to run the application 'http://0.0.0.0:5000/'.
+4. Login via Google or facebook start using the app to create, update, delete and access a list of items within a variety of categories. Registered users will have the ability to post, edit and delete their own items.
+
+## Usage
+1. After the application has been loaded successfully, Login via Google or facebook start using the app to create, update, delete and access a list of items within a variety of categories. Registered users will have the ability to post, edit and delete their own items.
+2. NB. The Blog is deployed and viewable to the public at: https://multi-user-blog-144820.appspot.com/blog
 
 
-Now that you have Vagrant up and running type **vagrant ssh** to log into your VM.  change to the /vagrant directory by typing **cd /vagrant**. This will take you to the shared folder between your virtual machine and host machine.
 
-Type **ls** to ensure that you are inside the directory that contains project.py, database_setup.py, and two directories named 'templates' and 'static'
+## Contributing
 
-Now type **python database_setup.py** to initialize the database.
+1. Fork it!
+2. Create your feature branch: `git checkout -b my-new-feature`
+3. Commit your changes: `git commit -am 'Add some feature'`
+4. Push to the branch: `git push origin my-new-feature`
+5. Submit a pull request :D
 
-Type **python lotsofmenus.py** to populate the database with restaurants and menu items. (Optional)
+## History
 
-Type **python project.py** to run the Flask web server. In your browser visit **http://localhost:5000** to view the restaurant menu app.  You should be able to view, add, edit, and delete menu items and restaurants.
+1.
+
+## Credits
+
+1. The udacity nano degree team provided the guidance and training i required to complete this project.
+
+
+## License
+MIT License
+
+Copyright (c) 2016 Clive Cadogan
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+## changelog
+
+
+
+#Versioning
+ Version 1. 
