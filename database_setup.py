@@ -7,7 +7,11 @@ from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
 # Connect to Database and create database session
-engine = create_engine('sqlite:///catalog.db')
+# sqlite
+# engine = create_engine('sqlite:///catalog.db')
+# psycopg2
+engine = create_engine('postgresql+psycopg2://catalog:catalog1232@localhost/catalog')
+
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
@@ -68,7 +72,8 @@ class Item(Base):
         }
 
 
-engine = create_engine('sqlite:///catalog.db')
-
+# engine = create_engine('sqlite:///catalog.db')
+# psycopg2
+engine = create_engine('postgresql+psycopg2://catalog:catalog1232@localhost/catalog')
 
 Base.metadata.create_all(engine)

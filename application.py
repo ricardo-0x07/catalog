@@ -45,7 +45,10 @@ CLIENT_ID = json.loads(
 APPLICATION_NAME = "Catalog Application"
 
 # Connect to Database and create database session
-engine = create_engine('sqlite:///catalog.db')
+# engine = create_engine('sqlite:///catalog.db')
+# psycopg2
+engine = create_engine('postgresql+psycopg2://catalog:catalog1232@localhost/catalog')
+
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
@@ -364,8 +367,6 @@ def disconnect():
     Return: renders cataog.
     """
     if 'provider' in login_session:
-        print "login_session['provider']"
-        print login_session['provider']
         if login_session['provider'] == 'google':
             gdisconnect()
             del login_session['gplus_id']
