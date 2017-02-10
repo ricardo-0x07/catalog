@@ -1,7 +1,6 @@
 # This file is used by pip to install required python packages
 # Usage: 'pip install -r requirements.txt' or 'xargs apt-get install <requirements.txt'
 
-heetah==2.4.4
 Flask==0.10.1
 Flask-HTTPAuth==3.2.2
 Jinja2==2.7.2

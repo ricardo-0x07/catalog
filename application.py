@@ -55,20 +55,6 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 
-@app.route('/login')
-def showLogin():
-    """Create anti-forgery state token.
-
-    Return: renders the login page.
-    """
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
-                    for x in xrange(32))
-    login_session['state'] = state
-    # Set new random CRSF TOKEN value
-    app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
-    return render_template('login.html', STATE=state)
-
-
 @app.before_request
 def csrf_protect():
     """Check csrf token on post requests."""
@@ -93,6 +79,20 @@ def generate_csrf_token():
                                                       string.digits) for x
                                                in xrange(32))
     return login_session['_csrf_token']
+
+
+@app.route('/login')
+def showLogin():
+    """Create anti-forgery state token.
+
+    Return: renders the login page.
+    """
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits)
+                    for x in xrange(32))
+    login_session['state'] = state
+    # Set new random CRSF TOKEN value
+    app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
+    return render_template('login.html', STATE=state)
 
 
 def login_required(f):
@@ -135,20 +135,10 @@ def fbconnect():
         'web']['app_id']
     app_secret = json.loads(open('fb_client_secrets.json', 'r').read())[
         'web']['app_secret']
-    print 'app_id'
-    print app_id
-    print 'app_secret'
-    print app_secret
-    print 'access_token'
-    print access_token
     url = """https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s""" % (
         app_id, app_secret, access_token)
-    print 'url'
-    print url
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
-    print 'token result'
-    print result
 
     # Use token to get user from API
     # userinfo_url = "https://graph.facebook.com/v2.4/me"
@@ -158,10 +148,6 @@ def fbconnect():
     url = "https://graph.facebook.com/v2.4/me?%s&fields=name,id,email" % token
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
-    print 'fields result'
-    print result
-    # Print 'url sent for API access:%s'% url
-    # print 'API JSON result: %s' % result
     data = json.loads(result)
     login_session['provider'] = 'facebook'
     login_session['username'] = data['name']
@@ -172,10 +158,6 @@ def fbconnect():
     url = """https://graph.facebook.com/v2.4/me/picture?%s&redirect=0&height=200&width=200""" % token
     h = httplib2.Http()
     result = h.request(url, 'GET')[1]
-    print 'picture result'
-    print result
-    # Print 'url sent for API access:%s'% url
-    # print 'API JSON result: %s' % result
     data = json.loads(result)
     login_session['picture'] = 'picture'
 
@@ -192,7 +174,6 @@ def fbconnect():
     output += login_session['picture']
     output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     flash("you are now logged in as %s" % login_session['username'])
-    print "done!"
     return output
 
 
@@ -204,12 +185,7 @@ def gconnect():
      or Success message when user has successfully signed in with google
      credentials.
     """
-    print "request.args.get('state')"
-    print request.args.get('state')
     if request.args.get('state') != login_session['state']:
-        print request.args.get('state')
-        print login_session['state']
-        print 'Invalid state'
         response = make_response(json.dumps('Invalid state'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -220,7 +196,6 @@ def gconnect():
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
-        print 'Failed to upgrade the authorization code.'
         response = make_response(json.dumps(
             'Failed to upgrade the authorization code.', 401))
         response.headers['Content-Type'] = 'application/json'
@@ -240,7 +215,6 @@ def gconnect():
     # Verify that the access token is used for the intended user.
     gplus_id = credentials.id_token['sub']
     if result['user_id'] != gplus_id:
-        print "Token's user ID doesn't match given user ID."
         response = make_response(
             json.dumps("Token's user ID doesn't match given user ID."), 401)
         response.headers['Content-Type'] = 'application/json'
@@ -248,10 +222,8 @@ def gconnect():
 
     # Verify that the access token is valid for this app.
     if result['issued_to'] != CLIENT_ID:
-        print "Token's client ID does not match app's."
         response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
-        print "Token's client ID does not match app's."
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -291,7 +263,6 @@ def gconnect():
     output += login_session['picture']
     output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
     flash("you are now logged in as %s" % login_session['username'])
-    print "done!"
     return output
 
 
@@ -407,9 +378,6 @@ def gdisconnect():
     Return: success or failure response.
     """
     credentials = login_session['credentials']
-    print 'In gdisconnect access token is %s', credentials
-    print 'User name is: '
-    print login_session['username']
 
     # Only disconnect a connected user.
     # credentials = login_session['credentials']
@@ -420,16 +388,10 @@ def gdisconnect():
         return response
     #  Execute HTTP GET request to revike current token.
     access_token = credentials.access_token
-    print 'access_token'
-    print access_token
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-    print 'result'
-    print result
 
-    print 'status'
-    print result['status']
     if result['status'] == 200:
         response = make_response(json.dumps('Successfully disconnected.'), 200)
         response.headers['Content-Type'] = 'application/json'
@@ -474,8 +436,6 @@ def showCatalog():
     """
     catalogs = session.query(Catalog).order_by(asc(Catalog.name)).all()
     items = session.query(Item).order_by(asc(Item.created)).limit(10).all()
-    print 'catalogs'
-    print catalogs
     return render_template('catalog.html', catalogs=catalogs, items=items)
 
 
@@ -517,19 +477,15 @@ def editCategory(category_name):
     Return: response to render the edit category form to allow editing of the
     category or the catalog after the category has been edited.
     """
-    print 'editCategory'
     editcategory = session.query(Catalog).filter_by(name=category_name).one()
     if editcategory.user.name != login_session['username']:
-        print "if editcategory.user_id != login_session['user_id']:"
         return """<script>function myFunction() {alert('You are not authorized to edit this category. Please create your own category in order to edit.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
-        print "if request.method == 'POST':"
         if request.form['name']:
             editcategory.name = request.form['name']
             flash('Catalog Successfully Edited %s' % editcategory.name)
             return redirect(url_for('showCatalog'))
     else:
-        print " else:"
         # Set new random CRSF TOKEN value
         app.jinja_env.globals['_csrf_token'] = generate_csrf_token()
         return render_template('editCategory.html', category=editcategory)
@@ -596,8 +552,6 @@ def newItem(category_name):
         return """<script>function myFunction() {alert('You are not authorized to add items to this category. Please create your own category in order to add items.');}</script><body onload='myFunction()''>"""
     if request.method == 'POST':
         item_id = getitemid(request.form['name'], category.id)
-        print 'item_id'
-        print item_id
         if item_id == None:
             newitem = Item(name=request.form['name'],
                            description=request.form['description'],
