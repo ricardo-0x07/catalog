@@ -21,12 +21,13 @@
 # SOFTWARE.
 
 
+import os
 from functools import wraps
 from flask import Flask, render_template, request, redirect, jsonify, url_for, flash, abort
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, User, Catalog, Item
-
+from flask.ext.sqlalchemy import SQLAlchemy
 from flask import session as login_session
 import random
 import string
@@ -47,7 +48,10 @@ APPLICATION_NAME = "Catalog Application"
 # Connect to Database and create database session
 # engine = create_engine('sqlite:///catalog.db')
 # psycopg2
-engine = create_engine('postgresql+psycopg2://catalog:catalog1232@localhost/catalog')
+# engine = create_engine('postgresql+psycopg2://catalog:catalog1232@localhost/catalog')
+# heroku
+engine = create_engine(os.environ['DATABASE_URL'])
+
 
 Base.metadata.bind = engine
 
@@ -650,4 +654,5 @@ def deleteItem(category_name, item_name):
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
     app.debug = True
-    app.run(host='0.0.0.0', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
